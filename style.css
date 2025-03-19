@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap');
+
 :root {
     --num_cols: 8;
 }
@@ -9,7 +11,12 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6, p {
+    font-family: 'Funnel Display', sans-serif;
     color: #d1d1d1;
+}
+
+span {
+    white-space: pre;
 }
 
 .grid {
@@ -21,8 +28,11 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 .grid-cell {
+    font-family: 'Funnel Display', sans-serif;
     width: 32px;
     height: 32px;
+    font-size: 24px;
+    color: #434343;
     cursor: pointer;
     background-color: transparent;
     perspective: 1000px;
@@ -39,17 +49,31 @@ h1, h2, h3, h4, h5, h6, p {
     transform-style: preserve-3d;
 }
 
-.grid-cell:hover {
+.locked-in {
+    color: #222222;
+    font-weight: 700;
+}
+
+.flipped {
+    border-style: inset;
+}
+
+#tool-tip {
+    font-family: 'Funnel Display', sans-serif;
+    color: #d1d1d1;
+    font-size: 1rem;
+}
+
+/* .grid-cell:hover {
     z-index: 500;
 }
   
-.grid-cell:hover .grid-cell-inner {
+.grid-cell:hover .grid-cell-inner { */
     /* transform: rotateY(45deg) rotateX(2deg) scale(1.5); */
-    transform: rotateY(180deg);
-}
+    /* transform: rotateY(180deg);
+} */
   
 .grid-cell-front, .grid-cell-back {
-    font-size: 40px;
     text-align: center;
     vertical-align: middle;
     position: absolute;
@@ -60,6 +84,7 @@ h1, h2, h3, h4, h5, h6, p {
     border: 3px solid #fdfdfd;
     border-style: outset;
     box-sizing: border-box;
+    user-select: none;
 }
 
 .grid-cell-front {
@@ -70,6 +95,21 @@ h1, h2, h3, h4, h5, h6, p {
 .grid-cell-back {
     background-color: #bbb;
     transform: rotateY(180deg);
+}
+
+.selected {
+    /* border-style: inset; */
+    outline: 3px solid #ffffff;
+    outline-style: solid;
+}
+
+.input-select {
+    outline: 2px solid #ffffff;
+}
+
+.input-cursor .grid-cell-front {
+    outline: 2px solid #ff0000;
+    outline-offset: -5px;
 }
 
 .keyboard-button {
@@ -87,13 +127,14 @@ h1, h2, h3, h4, h5, h6, p {
 
 #keyboard-cont {
     position: relative;
-    margin: 1rem;
+    margin: 0rem;
     margin-top: 0.65rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     user-select: none;
     row-gap: 2px;
+    width: 100%;
 }
 
 #keyboard-cont div {
@@ -104,8 +145,7 @@ h1, h2, h3, h4, h5, h6, p {
 .letter-bonus { background-color: lightblue; border-color: lightblue; }
 .word-bonus { background-color: lightgreen; border-color: lightgreen; }
 .block { background-color: #333; border-color: #333; }
-.wildcard { background-color: rgb(255, 255, 135); border-color: rgb(255, 255, 135); }
-.flipped { opacity: 0.5; } /* Indicate flipped cells */
+.wildcard { background-color: rgb(255, 255, 135); border-color: rgb(255, 255, 135); font-weight: 700; }
 
 /* Desktop Enhancements (Media Query) */
 @media (min-width: 768px) {
@@ -117,6 +157,6 @@ h1, h2, h3, h4, h5, h6, p {
     .grid-cell {
         width: 50px;
         height: 50px;
-        font-size: 40px;
+        font-size: 36px;
     }
 }
