@@ -64,6 +64,17 @@ span {
     font-size: 1rem;
 }
 
+#attribution {
+    margin-top: 50px;
+    text-align: center;
+}
+
+#attribution p {
+    font-family: 'Funnel Display', sans-serif;
+    font-size: 0.75rem;
+    color: #4d4d4d;
+}
+
 /* .grid-cell:hover {
     z-index: 500;
 }
@@ -141,7 +152,6 @@ span {
     display: flex;
 }
 
-/* Add more styling for bonuses, etc. */
 .letter-bonus { background-color: lightblue; border-color: lightblue; }
 .word-bonus { background-color: lightgreen; border-color: lightgreen; }
 .block { background-color: #333; border-color: #333; }

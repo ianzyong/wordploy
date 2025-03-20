@@ -1,11 +1,18 @@
 let gridWidth = 5;
 let gridLength = 8;
 let gridSize = gridWidth * gridLength;
-let selectedMax = 5;
+let selectedMax = 1;
 let isRowSelected = true;
 let editableInds = [];
 let selectedSet = [];
 let inputIndex = 0;
+let isPlayerSide = true;
+
+if (selectedMax > 1) {
+    var flipToolTip = "Select cells to flip...";
+} else {
+    var flipToolTip = "Select a cell to flip...";
+}
 
 // read valid_words.txt into array
 let validWords = [];
@@ -28,8 +35,8 @@ let gameStates = ["playerEntry","playerFlip","aiTurn","gameEnd"]
 let gameState = gameStates[0];
 let playerGrid = [];
 let aiGrid = [];
-let playerScore = 0;
-let aiScore = 0;
+let playerTotal = 0;
+let aiTotal = 0;
 let playerWords = [];
 let aiWords = [];
 
@@ -42,11 +49,6 @@ const aiWordsElement = document.getElementById('ai-words');
 const keyboardElement = document.getElementById('keyboard-cont');
 const toolTipTextElement = document.getElementById('tool-tip-text');
 toolTipTextElement.textContent = "Enter a word...";
-
-// --- Utility Functions ---
-function getRandomElement(array) {
-    return array[Math.floor(Math.random() * array.length)];
-}
 
 function generateRandomGrid(gridWidth, gridLength, isPlayer) {
     const grid = [];
@@ -199,8 +201,8 @@ function updateScoreboard() {
     // display scores line-by-line, ignoring words that contain "_"
     playerScores = playerScores.filter(([word, score]) => !word.includes('_') && score > 0);
     aiScores = aiScores.filter(([word, score]) => !word.includes('_') && score > 0);
-    let playerTotal = playerScores.reduce((acc, [word, score]) => acc + score, 0);
-    let aiTotal = aiScores.reduce((acc, [word, score]) => acc + score, 0);
+    playerTotal = playerScores.reduce((acc, [word, score]) => acc + score, 0);
+    aiTotal = aiScores.reduce((acc, [word, score]) => acc + score, 0);
     playerScoreElement.textContent = playerTotal + "\r\n" + playerScores.map(([word, score]) => `${word}: ${score}`).join(', ');
     aiScoreElement.textContent = aiTotal + "\r\n" + aiScores.map( ([word, score]) => `${word}: ${score}`).join(', ');
     // playerWordsElement.textContent = playerWords.join(', ');
@@ -277,12 +279,19 @@ gridElement.addEventListener('click', function (event) {
                 } else if (selectedNum < selectedMax) {
                     // add .selected class to cellElement
                     cellElement.children[0].classList.add('selected');
+                } else if (selectedMax === 1) {
+                    // remove .selected class from all cells
+                    gridElement.querySelectorAll('.selected').forEach(cell => {
+                        cell.classList.remove('selected');
+                    });
+                    // add .selected class to cellElement
+                    cellElement.children[0].classList.add('selected');
                 }
             } else {
                 return;
             }
         } else if (gameState === gameStates[2]) { // aiTurn
-
+            return;
         } else if (gameState === gameStates[3]) { // gameEnd
             return;
         }
@@ -292,7 +301,7 @@ gridElement.addEventListener('click', function (event) {
 function clearInputSelectText() {
     gridElement.querySelectorAll('.input-select').forEach(cell => {
         // if not wildcard and if not locked-in
-        if (cell.textContent !== '*' && !cell.children[0].classList.contains('locked-in')) {
+        if (!cell.children[0].classList.contains('wildcard') && !cell.children[0].classList.contains('locked-in')) {
         // get coordinates of selected cell
             let cellIndex = Array.from(cell.parentNode.parentNode.children).indexOf(cell.parentNode);
             let cellRow = Math.floor(cellIndex / gridWidth);
@@ -303,6 +312,15 @@ function clearInputSelectText() {
     });
     // render grid
     renderGrid(playerGrid, aiGrid);
+}
+
+function checkForGameOver() {
+    // if all cells are not editable on playerGrid and aiGrid
+    if (playerGrid.every(row => row.every(cell => !cell.editable)) && aiGrid.every(row => row.every(cell => !cell.editable))) {
+        gameState = gameStates[3];
+        let winner = playerTotal > aiTotal ? "player" : "AI";
+        toolTipTextElement.textContent = "Game over... " + winner + " wins! (hit Tab to toggle grids)";
+    }
 }
 
 function highlightInput(row, col, isRowSelected) {
@@ -449,8 +467,8 @@ keyboardElement.addEventListener('click', function (event) {
             } else if (key === "Submit") {
                 if (gameState === gameStates[0]) {
                     // get letters from selected cells
-                    let word = Array.from(gridElement.querySelectorAll('.input-select')).map(cell => cell.textContent).join('');
-                    if (word.length < selectedSet.length || word.length === 0) {
+                    let word = Array.from(gridElement.querySelectorAll('.input-select .grid-cell-front')).map(cell => cell.textContent).join('');
+                    if (word.length < selectedSet.size || word.length === 0) {
                         return;
                     } else {
                         // set editable to false for cells in playerGrid corresponding to selected cells
@@ -472,7 +490,7 @@ keyboardElement.addEventListener('click', function (event) {
                         gridElement.querySelectorAll('.input-select').forEach(cell => {
                             cell.classList.remove('input-select');
                         });
-                        toolTipTextElement.textContent = "Select cells to flip...";
+                        toolTipTextElement.textContent = flipToolTip;
                     }
                     
                 } else if (gameState === gameStates[1]) {
@@ -481,33 +499,96 @@ keyboardElement.addEventListener('click', function (event) {
                     flipCells(gridElement.querySelectorAll('.selected'));
 
                     // AI turn
+                    gameState = gameStates[2];
                     toolTipTextElement.textContent = "My turn...";
-                    //console.log(getPossibleWordIndices(playerGrid));
-                    //console.log(getPossibleWordIndices(aiGrid));
-                    
 
-                    // highlight cell
-                    let el = null;
-                    setTimeout(() => {
-                        let row = Math.floor(Math.random() * gridLength);
-                        let col = Math.floor(Math.random() * gridWidth);
-                        while (playerGrid[row][col].flipped) {
-                            row = Math.floor(Math.random() * gridLength);
-                            col = Math.floor(Math.random() * gridWidth);
+                    if (aiGrid.every(row => row.every(cell => !cell.editable))) {
+                        checkForGameOver();
+                    } else {
+                        let posssibleWordIndices = getPossibleWordIndices(aiGrid);
+                        // while all of the indices are filled
+                        let wordInds = null;
+                        wordInds = posssibleWordIndices[Math.floor(Math.random() * posssibleWordIndices.length)];
+                        while (posssibleWordIndices.every(word => wordInds.every(cell => aiGrid[cell[0]][cell[1]].content !== ''))) {
+                            // get random word
+                            wordInds = posssibleWordIndices[Math.floor(Math.random() * posssibleWordIndices.length)];
                         }
-                        el = gridElement.children[row * gridWidth + col];
-                        el.children[0].classList.add('selected');
-                    }, 500);
+                        console.log(wordInds);
+                        // get valid words of the same length
+                        let possibleWords = validWords.filter(word => word.length === wordInds.length);
+                        // for each cell in the word
+                        for (let wordInd = 0; wordInd < wordInds.length; wordInd++) {
+                            let [row, col] = wordInds[wordInd];
+                            if (aiGrid[row][col].content !== '') {
+                                // remove words from possibleWords that do not have the same letter at the same index
+                                possibleWords = possibleWords.filter(word => word[wordInd] === aiGrid[row][col].content.toLowerCase());
+                            }
+                        }
+                        // if possibleWords is empty
+                        if (possibleWords.length === 0) {
+                            console.log("No possible words found.");
+                            // fill empty cells with random letters
+                            for (let cell of wordInds) {
+                                let [row, col] = cell;
+                                if (aiGrid[row][col].content === '') {
+                                    aiGrid[row][col].content = String.fromCharCode(65 + Math.floor(Math.random() * 26)).toUpperCase();
+                                    // set content of cellObject in playerGrid
+                                    aiGrid[row][col].editable = false;
+                                    // add locked-in class to cellElement
+                                    gridElement.children[row * gridWidth + col].children[0].classList.add('locked-in');
+                                }
+                            }
+                        } else {
+                            // pick a random word from the list of possible words
+                            let randomWord = possibleWords[Math.floor(Math.random() * possibleWords.length)];
+                            console.log(randomWord);
+                            // fill empty cells with letters from randomWord
+                            for (let wordInd = 0; wordInd < wordInds.length; wordInd++) {
+                                let [row, col] = wordInds[wordInd];
+                                if (aiGrid[row][col].content === '') {
+                                    aiGrid[row][col].content = randomWord[wordInd].toUpperCase();
+                                    // set content of cellObject in playerGrid
+                                    aiGrid[row][col].editable = false;
+                                    // add locked-in class to cellElement
+                                    gridElement.children[row * gridWidth + col].children[0].classList.add('locked-in');
+                                }
+                            }
+                        }
+                        
+                    }
+                    
+                    // if all cells are flipped
+                    if (!(playerGrid.every(row => row.every(cell => cell.flipped)))) {
+                        // highlight cell
+                        let el = null;
+                        setTimeout(() => {
+                            let row = Math.floor(Math.random() * gridLength);
+                            let col = Math.floor(Math.random() * gridWidth);
+                            while (playerGrid[row][col].flipped) {
+                                row = Math.floor(Math.random() * gridLength);
+                                col = Math.floor(Math.random() * gridWidth);
+                            }
+                            el = gridElement.children[row * gridWidth + col];
+                            el.children[0].classList.add('selected');
+                        }, 500);
+
+                        // set timeout
+                        setTimeout(() => {
+                            flipCells([el.children[0]]);
+                        }, 2200);
+                    }
 
                     // set timeout
                     setTimeout(() => {
-                        flipCells([el.children[0]]);
-                    }, 2200);
-
-                    gameState = gameStates[0];
-                    // set timeout
-                    setTimeout(() => {
+                        gameState = gameStates[0];
                         toolTipTextElement.textContent = "Enter a word...";
+                        // if the playergrid has no editable cells
+                        if (playerGrid.every(row => row.every(cell => !cell.editable))) {
+                            // go to player flip phase
+                            gameState = gameStates[1];
+                            toolTipTextElement.textContent = "No empty cells. " + flipToolTip;
+                            checkForGameOver();
+                        }
                     }, 2500);
                     
                 } else if (gameState === gameStates[2]) {
@@ -597,6 +678,19 @@ document.addEventListener('keydown', function (event) {
     if (event.key === "Enter") {
         // simulate click on check-button id
         document.getElementById('check-button').click();
+    }
+    if (gameState === gameStates[3]) {
+        if (event.key === "Tab") {
+            // toggle isPlayerSide
+            isPlayerSide = !isPlayerSide;
+            if (isPlayerSide) {
+                renderGrid(playerGrid, aiGrid);
+                toolTipTextElement.textContent = "Player's grid...";
+            } else {
+                renderGrid(aiGrid, playerGrid);
+                toolTipTextElement.textContent = "My grid...";
+            }
+        }
     }
 });
 
