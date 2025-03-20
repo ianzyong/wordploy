@@ -53,10 +53,10 @@ toolTipTextElement.textContent = "Enter a word...";
 function generateRandomGrid(gridWidth, gridLength, isPlayer) {
     const grid = [];
     // determine number of blocks
-    const numBlocks = Math.floor(gridSize * 0.2);
+    const numBlocks = Math.floor(gridSize * 0.25);
     const numLetterBonuses = Math.floor(gridSize * 0.1);
     const numWordBonuses = Math.floor(gridSize * 0.05);
-    const numWildcards = Math.floor(gridSize * 0.05);
+    const numWildcards = Math.floor(gridSize * 0.0); // TODO
     
     // initialize all grid objects
     for (let i = 0; i < gridLength; i++) {
@@ -318,8 +318,13 @@ function checkForGameOver() {
     // if all cells are not editable on playerGrid and aiGrid
     if (playerGrid.every(row => row.every(cell => !cell.editable)) && aiGrid.every(row => row.every(cell => !cell.editable))) {
         gameState = gameStates[3];
-        let winner = playerTotal > aiTotal ? "player" : "AI";
-        toolTipTextElement.textContent = "Game over... " + winner + " wins! (hit Tab to toggle grids)";
+        if (playerTotal === aiTotal) {
+            toolTipTextElement.textContent = "Game over... it's a tie! (hit Tab to toggle grids)";
+        } else {
+            let winner = playerTotal > aiTotal ? "player" : "AI";
+            toolTipTextElement.textContent = "Game over... " + winner + " wins! (hit Tab to toggle grids)";
+        }
+        
     }
 }
 
@@ -494,12 +499,44 @@ keyboardElement.addEventListener('click', function (event) {
                     }
                     
                 } else if (gameState === gameStates[1]) {
+
+                    let lastPlayerTotal = playerTotal;
+                    let lastAiTotal = aiTotal;
                     
                     flipCells(gridElement.querySelectorAll('.selected'));
 
+                    let AIQuipsPositive = ["All according to plan...!","Thanks for that one!","I'm on a roll!","I'm unstoppable!","You're going down!"];
+                    let AIQuipsNegative = ["Wow... really?","Are you cheating?","Argh!","That's crazy...","Lucky guess..."];
+                    let AIQuipsNeutral = ["Hmm...","How about this?","Let's see...", "Carry the four...","Maybe this one..."];
+
+                    let AIQuipsPlayerPositive = ["Well played.","I see what you did there.","Nice set-up.","You planned that, didn't you?"];
+                    let AIQuipsPlayerNegative = ["Questionable move, but okay...","What did you do that for?","That's certainly a choice.","What are you planning?","What an odd move..."];
+
+                    let AIQuip = "";
+                    // chance of selecting random quip based on score difference
+                    let AIScoreDifference = aiTotal - lastAiTotal;
+                    let playerScoreDifference = playerTotal - lastPlayerTotal;
+
+                    if (AIScoreDifference > 0) {
+                        AIQuip = AIQuipsPositive[Math.floor(Math.random() * AIQuipsPositive.length)];
+                    } else if (AIScoreDifference < 0) {
+                        AIQuip = AIQuipsNegative[Math.floor(Math.random() * AIQuipsNegative.length)];
+                    } else {
+                        if (Math.random() < 0.5) {
+                            AIQuip = AIQuipsNeutral[Math.floor(Math.random() * AIQuipsNeutral.length)];
+                        } else {
+                            AIQuip = "My turn...";
+                        }
+                    }
+                    if (playerScoreDifference > 0) {
+                        AIQuip = AIQuipsPlayerPositive[Math.floor(Math.random() * AIQuipsPlayerPositive.length)];
+                    } else if (playerScoreDifference < 0) {
+                        AIQuip = AIQuipsPlayerNegative[Math.floor(Math.random() * AIQuipsPlayerNegative.length)];
+                    }
+
                     // AI turn
                     gameState = gameStates[2];
-                    toolTipTextElement.textContent = "My turn...";
+                    toolTipTextElement.textContent = AIQuip;
 
                     if (aiGrid.every(row => row.every(cell => !cell.editable))) {
                         checkForGameOver();
@@ -612,16 +649,20 @@ function flipCells(cells) {
     }
     for (let ind of flippedIndices) {
         let [cellRow, cellCol] = ind.split(',').map(Number);
-        // flip cellObject in playerGrid and aiGrid
-        playerGrid[cellRow][cellCol].flipped = true;
-        aiGrid[cellRow][cellCol].flipped = true;
+        if (gameState !== gameStates[3]) {
+            // flip cellObject in playerGrid and aiGrid
+            playerGrid[cellRow][cellCol].flipped = true;
+            aiGrid[cellRow][cellCol].flipped = true;
+        }
         // exchange front and back objects
         let temp = playerGrid[cellRow][cellCol];
         playerGrid[cellRow][cellCol] = aiGrid[cellRow][cellCol];
         aiGrid[cellRow][cellCol] = temp;
         // set transform to 0deg
         gridElement.children[cellRow * gridWidth + cellCol].style.transform = 'rotateY(0deg)';
-        updateScoreboard();
+        if (gameState !== gameStates[3]) {
+            updateScoreboard();
+        }
     }
     gridElement.querySelectorAll('.selected').forEach(cell => {
         cell.classList.remove('selected');
@@ -681,11 +722,14 @@ document.addEventListener('keydown', function (event) {
         if (event.key === "Tab") {
             // toggle isPlayerSide
             isPlayerSide = !isPlayerSide;
-            if (isPlayerSide) {
+            // animate all cells flipping
+            flipCells(gridElement.querySelectorAll('.grid-cell-inner'));
+            setTimeout(() => {
                 renderGrid(playerGrid, aiGrid);
+            }, 300);
+            if (isPlayerSide) {
                 toolTipTextElement.textContent = "Player's grid...";
             } else {
-                renderGrid(aiGrid, playerGrid);
                 toolTipTextElement.textContent = "My grid...";
             }
         }
