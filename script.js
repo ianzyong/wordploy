@@ -495,7 +495,6 @@ keyboardElement.addEventListener('click', function (event) {
                     
                 } else if (gameState === gameStates[1]) {
                     
-                    
                     flipCells(gridElement.querySelectorAll('.selected'));
 
                     // AI turn
@@ -513,7 +512,6 @@ keyboardElement.addEventListener('click', function (event) {
                             // get random word
                             wordInds = posssibleWordIndices[Math.floor(Math.random() * posssibleWordIndices.length)];
                         }
-                        console.log(wordInds);
                         // get valid words of the same length
                         let possibleWords = validWords.filter(word => word.length === wordInds.length);
                         // for each cell in the word
@@ -526,7 +524,6 @@ keyboardElement.addEventListener('click', function (event) {
                         }
                         // if possibleWords is empty
                         if (possibleWords.length === 0) {
-                            console.log("No possible words found.");
                             // fill empty cells with random letters
                             for (let cell of wordInds) {
                                 let [row, col] = cell;
@@ -541,7 +538,6 @@ keyboardElement.addEventListener('click', function (event) {
                         } else {
                             // pick a random word from the list of possible words
                             let randomWord = possibleWords[Math.floor(Math.random() * possibleWords.length)];
-                            console.log(randomWord);
                             // fill empty cells with letters from randomWord
                             for (let wordInd = 0; wordInd < wordInds.length; wordInd++) {
                                 let [row, col] = wordInds[wordInd];
@@ -557,39 +553,41 @@ keyboardElement.addEventListener('click', function (event) {
                         
                     }
                     
-                    // if all cells are flipped
-                    if (!(playerGrid.every(row => row.every(cell => cell.flipped)))) {
-                        // highlight cell
-                        let el = null;
-                        setTimeout(() => {
-                            let row = Math.floor(Math.random() * gridLength);
-                            let col = Math.floor(Math.random() * gridWidth);
-                            while (playerGrid[row][col].flipped) {
-                                row = Math.floor(Math.random() * gridLength);
-                                col = Math.floor(Math.random() * gridWidth);
-                            }
-                            el = gridElement.children[row * gridWidth + col];
-                            el.children[0].classList.add('selected');
-                        }, 500);
+                    if (gameState === gameStates[2]) {
+                        // if all cells are flipped
+                        if (!(playerGrid.every(row => row.every(cell => cell.flipped)))) {
+                            // highlight cell
+                            let el = null;
+                            setTimeout(() => {
+                                let row = Math.floor(Math.random() * gridLength);
+                                let col = Math.floor(Math.random() * gridWidth);
+                                while (playerGrid[row][col].flipped) {
+                                    row = Math.floor(Math.random() * gridLength);
+                                    col = Math.floor(Math.random() * gridWidth);
+                                }
+                                el = gridElement.children[row * gridWidth + col];
+                                el.children[0].classList.add('selected');
+                            }, 500);
+
+                            // set timeout
+                            setTimeout(() => {
+                                flipCells([el.children[0]]);
+                            }, 2200);
+                        }
 
                         // set timeout
                         setTimeout(() => {
-                            flipCells([el.children[0]]);
-                        }, 2200);
+                            gameState = gameStates[0];
+                            toolTipTextElement.textContent = "Enter a word...";
+                            // if the playergrid has no editable cells
+                            if (playerGrid.every(row => row.every(cell => !cell.editable))) {
+                                // go to player flip phase
+                                gameState = gameStates[1];
+                                toolTipTextElement.textContent = "No empty cells. " + flipToolTip;
+                                checkForGameOver();
+                            }
+                        }, 2500);
                     }
-
-                    // set timeout
-                    setTimeout(() => {
-                        gameState = gameStates[0];
-                        toolTipTextElement.textContent = "Enter a word...";
-                        // if the playergrid has no editable cells
-                        if (playerGrid.every(row => row.every(cell => !cell.editable))) {
-                            // go to player flip phase
-                            gameState = gameStates[1];
-                            toolTipTextElement.textContent = "No empty cells. " + flipToolTip;
-                            checkForGameOver();
-                        }
-                    }, 2500);
                     
                 } else if (gameState === gameStates[2]) {
 
