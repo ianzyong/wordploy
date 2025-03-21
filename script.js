@@ -49,6 +49,7 @@ const aiWordsElement = document.getElementById('ai-words');
 const keyboardElement = document.getElementById('keyboard-cont');
 const toolTipTextElement = document.getElementById('tool-tip-text');
 toolTipTextElement.textContent = "Enter a word...";
+const toolbarElement = document.getElementById('toolbar');
 
 function generateRandomGrid(gridWidth, gridLength, isPlayer) {
     const grid = [];
@@ -192,12 +193,17 @@ function renderGrid(frontGrid, backGrid) {
             gridElement.appendChild(cellElement);
         }
     }
+    let cellsToHighlight = scoreAllWords(frontGrid)[1];
+    // highlight elements coresponding to indices in cellsToHighlight
+    cellsToHighlight.forEach(cell => {
+        cell.children[0].classList.add('valid-highlight');
+    });
 }
 
 function updateScoreboard() {
     // score boards
-    let playerScores = scoreAllWords(playerGrid);
-    let aiScores = scoreAllWords(aiGrid);
+    let playerScores = scoreAllWords(playerGrid)[0];
+    let aiScores = scoreAllWords(aiGrid)[0];
     // display scores line-by-line, ignoring words that contain "_"
     playerScores = playerScores.filter(([word, score]) => !word.includes('_') && score > 0);
     aiScores = aiScores.filter(([word, score]) => !word.includes('_') && score > 0);
@@ -418,6 +424,7 @@ function getPossibleWordIndices(grid) {
 function scoreAllWords(grid) {
     let possibleWordIndices = getPossibleWordIndices(grid);
     let scores = [];
+    let cellsToHighlight = [];
     for (let word of possibleWordIndices) {
         let wordBonusCount = 0;
         let score = 0;
@@ -437,6 +444,7 @@ function scoreAllWords(grid) {
                     if (grid[row][col].type === 'word-bonus') {
                         wordBonusCount++;
                     }
+                    cellsToHighlight.push(gridElement.children[row * gridWidth + col].children[0]);
                 }
                 scores.push([wordText,score*(2**wordBonusCount)]);
             } else {
@@ -449,8 +457,43 @@ function scoreAllWords(grid) {
         }
         
     }
-    return scores;
+    return [scores, cellsToHighlight];
 }
+
+// event listener for toolbar buttons
+toolbarElement.addEventListener('click', function (event) {
+    const buttonElement = event.target.closest('.toolbar-button');
+    
+    if (buttonElement) {
+        // if help-icon is clicked
+        if (buttonElement.id === 'help-icon') {
+            // open help modal
+            // helpModal.style.display = 'block';
+            // show alert
+            alert("Help modal coming soon...");
+        }
+        // if settings-icon is clicked
+        if (buttonElement.id === 'settings-icon') {
+            // open settings modal
+            // settingsModal.style.display = 'block';
+            // prompt for input
+            let newGridWidth = 0;
+            let newGridLength = 0;
+            while ((newGridWidth <= 3) || (newGridWidth > 10)) {
+                newGridWidth = parseInt(prompt("Enter a new grid width: (4-10)"));
+            }
+            while ((newGridLength <= 3) || (newGridLength > 10)) {
+                newGridLength = parseInt(prompt("Enter a new grid length: (4-10)"));
+            }
+            if (newGridWidth && newGridLength) {
+                gridWidth = newGridWidth;
+                gridLength = newGridLength;
+                init();
+            }
+
+        }
+    }
+});
 
 // add event listener for keyboard clicks
 keyboardElement.addEventListener('click', function (event) {
@@ -506,7 +549,7 @@ keyboardElement.addEventListener('click', function (event) {
                     flipCells(gridElement.querySelectorAll('.selected'));
 
                     let AIQuipsPositive = ["All according to plan...!","Thanks for that one!","I'm on a roll!","I'm unstoppable!","You're going down!"];
-                    let AIQuipsNegative = ["Wow... really?","Are you cheating?","Argh!","That's crazy...","Lucky guess..."];
+                    let AIQuipsNegative = ["Wow... really?","You aren't cheating, are you?","Argh!","That's crazy...","Lucky guess..."];
                     let AIQuipsNeutral = ["Hmm...","How about this?","Let's see...", "Carry the four...","Maybe this one..."];
 
                     let AIQuipsPlayerPositive = ["Well played.","I see what you did there.","Nice set-up.","You planned that, didn't you?"];
@@ -738,6 +781,9 @@ document.addEventListener('keydown', function (event) {
 
 // --- Game Initialization ---
 function init() {
+    gameState = gameStates[0];
+    toolTipTextElement.textContent = "Enter a word...";
+    gridSize = gridWidth * gridLength;
     // set root --num_cols variable in css file
     document.documentElement.style.setProperty('--num_cols', gridWidth);
     playerGrid = generateRandomGrid(gridWidth, gridLength, true);

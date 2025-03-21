@@ -58,10 +58,15 @@ span {
     border-style: inset;
 }
 
+#game-container {
+    width: 100%;
+}
+
 #tool-tip {
     font-family: 'Funnel Display', sans-serif;
     color: #d1d1d1;
     font-size: 1rem;
+    user-select: none;
 }
 
 #attribution {
@@ -136,6 +141,10 @@ span {
     color: #d1d1d1;
 }
 
+.valid-highlight {
+    color: #008200;
+}
+
 #keyboard-cont {
     position: relative;
     margin: 0rem;
@@ -150,6 +159,56 @@ span {
 
 #keyboard-cont div {
     display: flex;
+}
+
+#score-panel {
+    width: 80%;
+    max-width: 500px;
+    margin: auto;
+    margin-top: 20px;
+    padding: 0.5rem;
+    background-color: #333;
+    border-radius: 5px;
+    color: #d1d1d1;
+}
+
+#title {
+    font-weight: 700;
+    margin-left: 40px;
+    margin-right: 40px;
+    user-select: none;
+}
+
+#toolbar {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    border-bottom: 2px solid #7a7a7a;
+}
+
+#help-icon, #settings-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    height: 2.5rem;
+    width: 2.5rem;
+    margin: auto;
+    margin-left: 20px;
+    margin-right: 20px;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid #7a7a7a;
+    border-radius: 5px;
+    transition: background-color 0.5s;
+}
+
+#help-icon:hover, #settings-icon:hover {
+    background-color: #2d2d2d;
+}
+
+#help-icon p, #settings-icon p {
+    color: #7a7a7a;
 }
 
 .letter-bonus { background-color: lightblue; border-color: lightblue; }
